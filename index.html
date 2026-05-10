@@ -774,6 +774,140 @@ body::before {
   pointer-events: all;
 }
 
+/* — Nav button (길찾기) — */
+.tl-nav-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tl-nav-btn {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.tl-nav-naver {
+  background: #03C75A;
+  color: white;
+}
+.tl-nav-naver:active { background: #02a34a; }
+.tl-nav-kakao {
+  background: #FEE500;
+  color: #191919;
+}
+.tl-nav-kakao:active { background: #e6cf00; }
+
+/* — PlanB badge — */
+.tl-planb-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #E67E22;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.tl-planb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tl-planb-chip {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #FFF3E0;
+  color: #E67E22;
+  font-weight: 600;
+  border: 1px solid rgba(230,126,34,0.3);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+}
+.tl-planb-chip:active { background: #E67E22; color: white; }
+
+/* — Hours / Closed warning — */
+.tl-hours {
+  font-size: 11px;
+  color: var(--volcanic-light);
+  margin-top: 4px;
+}
+.tl-closed-warn {
+  font-size: 11px;
+  font-weight: 700;
+  color: #E74C3C;
+  background: #FDEDEC;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+/* — Rain mode toggle — */
+.rain-toggle {
+  position: fixed;
+  bottom: 76px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2px solid var(--ocean);
+  color: var(--ocean);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  z-index: 1001;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rain-toggle.active {
+  background: var(--ocean);
+  color: white;
+}
+.rain-toggle:hover { transform: scale(1.1); }
+
+/* Rain mode: hide outdoor places without planB, highlight planB */
+body.rain-mode .tl-card[data-indoor="false"]:not([data-has-planb="true"]) {
+  opacity: 0.4;
+}
+body.rain-mode .tl-card[data-indoor="false"] .tl-planb-label,
+body.rain-mode .tl-card[data-indoor="false"] .tl-planb {
+  background: #FFF3E0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  animation: planb-highlight 2s ease-in-out infinite;
+}
+@keyframes planb-highlight {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230,126,34,0); }
+  50% { box-shadow: 0 0 0 4px rgba(230,126,34,0.15); }
+}
+
+/* — Popup nav buttons — */
+.popup-nav-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.popup-nav-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 /* Hide Leaflet attribution on mobile for cleaner look */
 @media (max-width: 500px) {
   .leaflet-control-attribution { font-size: 8px !important; }
@@ -819,6 +953,9 @@ body::before {
   </section>
 </main>
 
+<!-- Rain mode toggle -->
+<button class="rain-toggle" id="rainBtn" title="비 올 때 플랜B 보기">🌧️</button>
+
 <!-- Checklist button + drawer -->
 <button class="checklist-toggle" id="checklistBtn" title="준비물 체크리스트">✓</button>
 <div class="checklist-overlay" id="checklistOverlay"></div>
@@ -834,31 +971,36 @@ const PLACES = [
   // Day 1
   { id: 'd1-1', day: 1, num: 1, name: '제주공항', time: '08:45', icon: '✈️', cat: 'airport',
     lat: 33.5104, lng: 126.4914, memo: '07:35 김포 출발 → 08:45 도착',
-    links: [] },
+    indoor: true, links: [] },
   { id: 'd1-2', day: 1, num: 2, name: '렌터카 픽업', time: '09:30', icon: '🚗', cat: 'car',
     lat: 33.5090, lng: 126.4930, memo: '렌트카하우스 5구역 10번',
-    links: [] },
+    indoor: true, links: [] },
   { id: 'd1-3', day: 1, num: 3, name: '사려니숲길', time: '10:00~11:30', icon: '🌿', cat: 'nature',
     lat: 33.4279, lng: 126.7088, memo: '비자림로 입구, 편백·삼나무 숲길 1.5시간',
-    tip: '09:00~17:00 운영, 우천 시 입장 제한. 음식물 반입 금지',
+    indoor: false, hours: '09:00~17:00', tip: '우천 시 입장 제한. 음식물 반입 금지',
+    planB: [
+      { name: '아르떼뮤지엄', desc: '몰입형 미디어아트 (실내)', lat: 33.2500, lng: 126.4100 },
+      { name: '비자림', desc: '삼나무 숲길, 사려니보다 짧은 코스', lat: 33.4530, lng: 126.8090 },
+    ],
     links: [
       { label: '공식 코스 안내', url: 'http://hallatrail.or.kr/salyeonisup' },
-      { label: 'Visit Jeju 소개', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CONT_000000000500281' },
+      { label: 'Visit Jeju', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CONT_000000000500281' },
       { label: '블로그 후기', url: 'https://brunch.co.kr/@gorrajeju/110' },
     ] },
   { id: 'd1-4', day: 1, num: 4, name: '세화리 점심', time: '12:00~13:00', icon: '🍽️', cat: 'food',
     lat: 33.4627, lng: 126.8597, memo: '해산물 or 보말칼국수',
+    indoor: true,
     alts: [
-      { name: '해월정', desc: '보말샤브샤브 + 죽볶음, TV 맛있는녀석들 출연', url: 'https://www.diningcode.com/list.dc?query=%EC%A0%9C%EC%A3%BC%EC%8B%9C+%EB%B3%B4%EB%A7%90%EC%B9%BC%EA%B5%AD%EC%88%98' },
-      { name: '재연식당', desc: '제주 정식 한상, 세화 현지인 맛집', url: 'https://mjroad.com/entry/%EC%A0%9C%EC%A3%BC%EB%8F%84-%EC%84%B8%ED%99%94%EB%A7%9B%EC%A7%91-%EC%A0%9C%EC%A3%BC-%EC%A0%95%EC%8B%9D%EC%9C%BC%EB%A1%9C-%EC%9C%A0%EB%AA%85%ED%95%9C-%EC%9E%AC%EC%97%B0%EC%8B%9D%EB%8B%B9' },
-      { name: '당케올레국수', desc: '보말칼국수·보말죽, 08:00~17:00 (목 휴무)', url: 'https://mobprof.com/144' },
+      { name: '해월정', desc: '보말샤브샤브 + 죽볶음, TV 출연', url: 'https://www.diningcode.com/list.dc?query=%EC%A0%9C%EC%A3%BC%EC%8B%9C+%EB%B3%B4%EB%A7%90%EC%B9%BC%EA%B5%AD%EC%88%98' },
+      { name: '재연식당', desc: '제주 정식 한상, 현지인 맛집', url: 'https://mjroad.com/entry/%EC%A0%9C%EC%A3%BC%EB%8F%84-%EC%84%B8%ED%99%94%EB%A7%9B%EC%A7%91-%EC%A0%9C%EC%A3%BC-%EC%A0%95%EC%8B%9D%EC%9C%BC%EB%A1%9C-%EC%9C%A0%EB%AA%85%ED%95%9C-%EC%9E%AC%EC%97%B0%EC%8B%9D%EB%8B%B9' },
+      { name: '당케올레국수', desc: '보말칼국수·죽, 목 휴무', url: 'https://mobprof.com/144', closedDay: 4 },
     ],
     links: [
       { label: '세화 맛집 모음', url: 'https://www.diningcode.com/list.dc?query=%EC%A0%9C%EC%A3%BC%EC%8B%9C+%EB%B3%B4%EB%A7%90%EC%B9%BC%EA%B5%AD%EC%88%98' },
     ] },
   { id: 'd1-5', day: 1, num: 5, name: '카페 마티에르', time: '13:30~15:00', icon: '☕', cat: 'cafe',
     lat: 33.4627, lng: 126.8590, memo: '세화 해변 유럽풍 빈티지 카페, 케이크·바다뷰',
-    tip: '주차: 맞은편 돌담 골목 안 주차장',
+    indoor: true, hours: '10:00~19:00', tip: '주차: 맞은편 돌담 골목 안 주차장',
     alts: [
       { name: '카페공작소', desc: '세화바다 품은 감성카페', url: 'https://brunch.co.kr/@gorrajeju/78' },
       { name: '카멜커피 제주', desc: '미니멀 공간, 감각적 무드', url: 'https://kr.trip.com/moments/detail/jeju-island-297-143143191' },
@@ -869,7 +1011,7 @@ const PLACES = [
     ] },
   { id: 'd1-6', day: 1, num: 6, name: 'Seogwipo KAL Hotel', time: '15:00', icon: '🏨', cat: 'hotel',
     lat: 33.2468, lng: 126.5616, memo: '체크인 15:00 / 체크아웃 24일 12:00',
-    tip: '오션뷰·야외수영장 우수. 12시 레이트 체크아웃',
+    indoor: true, tip: '오션뷰·야외수영장 우수. 12시 레이트 체크아웃',
     links: [
       { label: '공식 홈페이지', url: 'http://www.kalhotel.co.kr/' },
       { label: 'Trip.com 후기·특가', url: 'https://kr.trip.com/hotels/seogwipo-hotel-detail-992229/seogwipo-kal-hotel-jeju/' },
@@ -877,108 +1019,125 @@ const PLACES = [
     ] },
   { id: 'd1-7', day: 1, num: 7, name: '매일올레시장', time: '16:30~17:30', icon: '🛍️', cat: 'shop',
     lat: 33.2481, lng: 126.5658, memo: '흑돼지 만두, 한라봉 주스, 간식거리',
+    indoor: false, hours: '07:00~21:00',
     links: [
-      { label: 'Visit Jeju 소개', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CNTS_300000000013079' },
+      { label: 'Visit Jeju', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CNTS_300000000013079' },
     ] },
   { id: 'd1-8', day: 1, num: 8, name: '천지연폭포', time: '18:00~19:00', icon: '🌿', cat: 'nature',
     lat: 33.2459, lng: 126.5544, memo: '호텔에서 도보 10분, 저녁 산책',
+    indoor: false, hours: '09:00~22:00',
+    planB: [
+      { name: '이중섭거리 산책', desc: '갤러리·공방 거리 (실내외)', lat: 33.2490, lng: 126.5650 },
+    ],
     links: [
-      { label: 'Visit Jeju 소개', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CONT_000000000500348' },
+      { label: 'Visit Jeju', url: 'https://www.visitjeju.net/kr/detail/view?contentsid=CONT_000000000500348' },
     ] },
   { id: 'd1-9', day: 1, num: 9, name: '서귀포 갈치조림', time: '19:30~21:00', icon: '🍽️', cat: 'food',
     lat: 33.2475, lng: 126.5630, memo: '서귀포 대표 먹거리 갈치',
+    indoor: true,
     alts: [
-      { name: '바다어멍 시그니처', desc: '갈치구이·갈치조림, 해산물 한상', url: 'https://sh-happiness.com/entry/%EC%84%9C%EA%B7%80%ED%8F%AC-%EA%B0%88%EC%B9%98-%EB%A7%9B%EC%A7%91-%EB%8B%A4%EA%B0%99%EC%9D%B4-%EB%A7%8C%EC%A1%B1%EC%8A%A4%EB%9F%AC%EC%9B%A0%EB%8D%98-%ED%95%B4%EC%82%B0%EB%AC%BC-%EA%B0%88%EC%B9%98%EA%B5%AC%EC%9D%B4%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC-%EC%8B%9D%EB%8B%B9-%EB%B0%94%EB%8B%A4%EC%96%B4%EB%A9%8D-%EC%8B%9C%EA%B7%B8%EB%8B%88%EC%B2%98' },
-      { name: '네거리식당', desc: '서귀포 올레시장 근처, 현지인 단골 갈치조림', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC%EC%8B%9C+%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC' },
-      { name: '올레왕갈치', desc: '통갈치구이·갈치조림, 푸짐한 양', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC+%ED%86%B5%EA%B0%88%EC%B9%98%EA%B5%AC%EC%9D%B4' },
+      { name: '바다어멍', desc: '갈치구이·조림, 해산물 한상', url: 'https://sh-happiness.com/entry/%EC%84%9C%EA%B7%80%ED%8F%AC-%EA%B0%88%EC%B9%98-%EB%A7%9B%EC%A7%91-%EB%8B%A4%EA%B0%99%EC%9D%B4-%EB%A7%8C%EC%A1%B1%EC%8A%A4%EB%9F%AC%EC%9B%A0%EB%8D%98-%ED%95%B4%EC%82%B0%EB%AC%BC-%EA%B0%88%EC%B9%98%EA%B5%AC%EC%9D%B4%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC-%EC%8B%9D%EB%8B%B9-%EB%B0%94%EB%8B%A4%EC%96%B4%EB%A9%8D-%EC%8B%9C%EA%B7%B8%EB%8B%88%EC%B2%98' },
+      { name: '네거리식당', desc: '올레시장 근처, 현지인 단골', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC%EC%8B%9C+%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC' },
+      { name: '올레왕갈치', desc: '통갈치구이·조림, 푸짐한 양', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC+%ED%86%B5%EA%B0%88%EC%B9%98%EA%B5%AC%EC%9D%B4' },
     ],
     links: [
-      { label: '서귀포 갈치 맛집 TOP', url: 'https://hotplacehunter.co.kr/theme/article/55459/' },
-      { label: '다이닝코드 랭킹', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC%EC%8B%9C+%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC' },
+      { label: '갈치 맛집 TOP', url: 'https://hotplacehunter.co.kr/theme/article/55459/' },
+      { label: '다이닝코드', url: 'https://www.diningcode.com/list.dc?query=%EC%84%9C%EA%B7%80%ED%8F%AC%EC%8B%9C+%EA%B0%88%EC%B9%98%EC%A1%B0%EB%A6%BC' },
     ] },
 
   // Day 2
   { id: 'd2-1', day: 2, num: 1, name: 'KAL Hotel 조식', time: '08:00~09:00', icon: '🏨', cat: 'hotel',
     lat: 33.2468, lng: 126.5616, memo: '호텔 조식 뷔페, 서두르지 않기',
-    links: [] },
+    indoor: true, links: [] },
   { id: 'd2-2', day: 2, num: 2, name: '운진항', time: '10:00', icon: '⛴️', cat: 'ferry',
     lat: 33.2137, lng: 126.2517, memo: '승선권 교환, 신분증 필수',
+    indoor: false,
     links: [
       { label: '여객선 예매', url: 'https://island.theksa.co.kr/' },
-      { label: '가파도 배편 안내', url: 'http://www.maragapaferry.co.kr/htm/intr09.htm' },
+      { label: '배편 안내', url: 'http://www.maragapaferry.co.kr/htm/intr09.htm' },
     ] },
   { id: 'd2-3', day: 2, num: 3, name: '가파도', time: '10:15~14:00', icon: '🏝️', cat: 'island',
     lat: 33.1700, lng: 126.2717, memo: '도보 산책 — 청보리밭, 돌담길, 섬 카페',
-    tip: '5월 청보리축제 시즌. 도보로 섬 한 바퀴 약 2시간',
+    indoor: false, tip: '5월 청보리축제. 도보 섬 한 바퀴 약 2시간',
+    planB: [
+      { name: '송악산 둘레길', desc: '모슬포 인근, 해안 절벽 트레킹', lat: 33.2050, lng: 126.2900 },
+      { name: '산방산·용머리해안', desc: '결항 시 서부 관광 대안', lat: 33.2370, lng: 126.3120 },
+    ],
     links: [
-      { label: '가파도 여행 총정리', url: 'https://tender-25.com/entry/%EC%A0%9C%EC%A3%BC-%EA%B0%80%ED%8C%8C%EB%8F%84-%EB%B0%B0%ED%8E%B8-%EC%99%84%EB%B2%BD-%EC%A0%95%EB%A6%AC-%EC%8B%9C%EA%B0%84%ED%91%9C%C2%B7%EC%9A%94%EA%B8%88%C2%B7%EC%98%88%EC%95%BD-%EB%B0%A9%EB%B2%95%EA%B9%8C%EC%A7%80-%EC%B4%9D%EC%A0%95%EB%A6%AC' },
+      { label: '가파도 총정리', url: 'https://tender-25.com/entry/%EC%A0%9C%EC%A3%BC-%EA%B0%80%ED%8C%8C%EB%8F%84-%EB%B0%B0%ED%8E%B8-%EC%99%84%EB%B2%BD-%EC%A0%95%EB%A6%AC-%EC%8B%9C%EA%B0%84%ED%91%9C%C2%B7%EC%9A%94%EA%B8%88%C2%B7%EC%98%88%EC%95%BD-%EB%B0%A9%EB%B2%95%EA%B9%8C%EC%A7%80-%EC%B4%9D%EC%A0%95%EB%A6%AC' },
       { label: '블로그 후기', url: 'https://jeju.makemelife.com/entry/%EA%B0%80%ED%8C%8C%EB%8F%84-%EB%B0%B0%ED%8E%B8' },
     ] },
   { id: 'd2-4', day: 2, num: 4, name: '운진항 귀환', time: '14:20', icon: '⛴️', cat: 'ferry',
     lat: 33.2137, lng: 126.2517, memo: '14:20 배편 귀환',
-    links: [] },
+    indoor: false, links: [] },
   { id: 'd2-5', day: 2, num: 5, name: '제주신화월드', time: '15:30', icon: '🏨', cat: 'hotel',
     lat: 33.3050, lng: 126.3100, memo: '랜딩관 체크인 / 체크아웃 25일 11:00',
-    tip: '온수풀 07:00~22:00 (성인 35,000원). 워터파크 별도',
+    indoor: true, tip: '온수풀 07:00~22:00 (성인 35,000원). 워터파크 별도',
     links: [
       { label: '공식 홈페이지', url: 'https://www.shinhwaworld.com/' },
-      { label: 'KKday 신화월드 후기', url: 'https://www.kkday.com/ko/blog/15500/asia-korea-jeju-shinhwaworld' },
-      { label: '랜딩관 객실·조식 후기', url: 'https://travel.davidbro.com/73' },
-      { label: 'Agoda 예약·리뷰', url: 'https://www.agoda.com/ko-kr/jeju-shinhwa-world-landing-resort/hotel/jeju-island-kr.html' },
+      { label: 'KKday 후기', url: 'https://www.kkday.com/ko/blog/15500/asia-korea-jeju-shinhwaworld' },
+      { label: '객실·조식 후기', url: 'https://travel.davidbro.com/73' },
+      { label: 'Agoda', url: 'https://www.agoda.com/ko-kr/jeju-shinhwa-world-landing-resort/hotel/jeju-island-kr.html' },
     ] },
   { id: 'd2-6', day: 2, num: 6, name: '리조트 스파', time: '16:00~18:00', icon: '♨️', cat: 'spa',
     lat: 33.3055, lng: 126.3105, memo: '가파도 산책 후 피로 회복',
-    links: [] },
+    indoor: true, hours: '07:00~22:00', links: [] },
   { id: 'd2-7', day: 2, num: 7, name: '중문 저녁', time: '18:30~20:00', icon: '🍽️', cat: 'food',
     lat: 33.2470, lng: 126.4120, memo: '신화월드에서 차 10분, 중문 로컬 맛집',
+    indoor: true,
     alts: [
-      { name: '대기정', desc: '뼈없는 갈치조림 + 전복돌솥밥, 중문 대표', url: 'https://www.diningcode.com/list.dc?query=%EC%A4%91%EB%AC%B8' },
-      { name: '고집돌우럭', desc: '우럭조림 한상, TV 생생정보 출연', url: 'https://www.siksinhot.com/taste?upHpAreaId=15&hpAreaId=386' },
-      { name: '누이밥집', desc: '현지인 단골, 옥돔구이·접짝뼈국', url: 'https://tour.click1-tip.com/entry/%EC%A0%9C%EC%A3%BC-%EC%A4%91%EB%AC%B8-%EB%A7%9B%EC%A7%91-%EB%B2%A0%EC%8A%A4%ED%8A%B810' },
-      { name: '가든이다', desc: '숙성 흑돼지 전문, 뼈삼겹 시그니처', url: 'https://travelforkorea.com/entry/%EC%A0%9C%EC%A3%BC-%EC%A4%91%EB%AC%B8-%EB%A7%9B%EC%A7%91-BEST-5' },
+      { name: '대기정', desc: '뼈없는 갈치조림 + 전복돌솥밥', url: 'https://www.diningcode.com/list.dc?query=%EC%A4%91%EB%AC%B8' },
+      { name: '고집돌우럭', desc: '우럭조림 한상, TV 출연', url: 'https://www.siksinhot.com/taste?upHpAreaId=15&hpAreaId=386' },
+      { name: '누이밥집', desc: '현지인 단골, 옥돔구이', url: 'https://tour.click1-tip.com/entry/%EC%A0%9C%EC%A3%BC-%EC%A4%91%EB%AC%B8-%EB%A7%9B%EC%A7%91-%EB%B2%A0%EC%8A%A4%ED%8A%B810' },
+      { name: '가든이다', desc: '숙성 흑돼지, 뼈삼겹 시그니처', url: 'https://travelforkorea.com/entry/%EC%A0%9C%EC%A3%BC-%EC%A4%91%EB%AC%B8-%EB%A7%9B%EC%A7%91-BEST-5' },
     ],
     links: [
-      { label: '중문 맛집 BEST 10', url: 'https://www.siksinhot.com/taste?upHpAreaId=15&hpAreaId=386' },
-      { label: '다이닝코드 랭킹', url: 'https://www.diningcode.com/list.dc?query=%EC%A4%91%EB%AC%B8' },
+      { label: '중문 맛집 BEST10', url: 'https://www.siksinhot.com/taste?upHpAreaId=15&hpAreaId=386' },
+      { label: '다이닝코드', url: 'https://www.diningcode.com/list.dc?query=%EC%A4%91%EB%AC%B8' },
     ] },
 
   // Day 3
   { id: 'd3-1', day: 3, num: 1, name: '신화월드 조식', time: '08:00~09:30', icon: '🏨', cat: 'hotel',
     lat: 33.3050, lng: 126.3100, memo: '여유롭게 마지막 아침',
-    links: [] },
+    indoor: true, links: [] },
   { id: 'd3-2', day: 3, num: 2, name: '오설록 티뮤지엄', time: '10:30~12:00', icon: '🍵', cat: 'cafe',
-    lat: 33.3060, lng: 126.2893, memo: '녹차밭 산책 + 녹차 디저트 + 이니스프리 제주하우스',
-    tip: '입장 무료. 주차 무료. 제주 서부 필수 코스',
+    lat: 33.3060, lng: 126.2893, memo: '녹차밭 산책 + 녹차 디저트 + 이니스프리',
+    indoor: false, hours: '09:00~18:00', tip: '입장·주차 무료. 서부 필수 코스',
+    planB: [
+      { name: '티스톤 (오설록 실내)', desc: '프리미엄 티 체험 공간', lat: 33.3060, lng: 126.2893 },
+    ],
     links: [
       { label: '오설록 공식', url: 'https://www.osulloc.com/' },
-      { label: 'KKday 방문 후기', url: 'https://www.kkday.com/ko/blog/15476/asia-korea-jeju-osulloc-teamuseum' },
+      { label: 'KKday 후기', url: 'https://www.kkday.com/ko/blog/15476/asia-korea-jeju-osulloc-teamuseum' },
       { label: 'Trip.com 가이드', url: 'https://kr.trip.com/moments/theme/poi-osulloc-tea-museum-87471-comprehensive-guides-993136/' },
     ] },
   { id: 'd3-3', day: 3, num: 3, name: '우무 (한림)', time: '12:30~13:30', icon: '☕', cat: 'cafe',
     lat: 33.4100, lng: 126.2650, memo: '제주 대표 디저트 카페, 브런치 겸',
+    indoor: true, hours: '10:00~18:00', closedDay: 3,
     alts: [
       { name: '한림칼국수', desc: '24시간 숙성 면발, 보말칼국수 명가', url: 'https://brunch.co.kr/@dd667fc82ac44e3/211' },
-      { name: '콤마 (한림)', desc: '해변 해먹카페, 대형 창문 오션뷰', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
+      { name: '콤마 (한림)', desc: '해변 해먹카페, 오션뷰', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
     ],
     links: [
       { label: '제주 카페 BEST10', url: 'https://kr.hotels.com/go/south-korea/best-cafes-jeju' },
     ] },
   { id: 'd3-4', day: 3, num: 4, name: '애월더선셋', time: '14:00~15:30', icon: '☕', cat: 'cafe',
     lat: 33.4630, lng: 126.3260, memo: '오션뷰 카페, 수제 디저트',
+    indoor: true, hours: '10:00~20:00',
     alts: [
-      { name: '팀 블로우', desc: '애월 해안선 전체 조망, 일몰 명소', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
+      { name: '팀 블로우', desc: '애월 해안선 조망, 일몰 명소', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
       { name: '사일리커피', desc: '지중해풍, TV 바퀴달린집 출연', url: 'https://brunch.co.kr/@telltrip/112' },
     ],
     links: [
-      { label: '애월카페거리 가이드', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
-      { label: '제주 오션뷰 카페 TOP6', url: 'https://www.ieconomyu.com/jeju-ocean-view-cafe-spring/' },
+      { label: '애월카페 가이드', url: 'https://kr.trip.com/moments/theme/poi-aewol-cafe-street-140150040-comprehensive-guides-993136/' },
+      { label: '오션뷰 카페 TOP6', url: 'https://www.ieconomyu.com/jeju-ocean-view-cafe-spring/' },
     ] },
   { id: 'd3-5', day: 3, num: 5, name: '렌터카 반납', time: '17:00', icon: '🚗', cat: 'car',
     lat: 33.5090, lng: 126.4930, memo: '17:00까지 반납',
-    links: [] },
+    indoor: true, links: [] },
   { id: 'd3-6', day: 3, num: 6, name: '제주공항', time: '18:55', icon: '✈️', cat: 'airport',
     lat: 33.5104, lng: 126.4914, memo: '7C186 제주→김포 18:55 출발',
-    links: [] },
+    indoor: true, links: [] },
 ];
 
 const CHECKLIST = [
@@ -1057,6 +1216,13 @@ PLACES.forEach(p => {
     });
     popupExtra += `</div>`;
   }
+  const naverUrl = `nmap://search?query=${encodeURIComponent(p.name)}&lat=${p.lat}&lng=${p.lng}&appname=jeju.trip`;
+  const naverWeb = `https://map.naver.com/v5/search/${encodeURIComponent(p.name + ' 제주')}`;
+  const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+  const popupNav = `<div class="popup-nav-row">
+    <a class="popup-nav-btn tl-nav-naver" href="${naverWeb}" target="_blank">네이버지도</a>
+    <a class="popup-nav-btn tl-nav-kakao" href="${kakaoUrl}" target="_blank">카카오맵</a>
+  </div>`;
   const popupHtml = `
     <div class="popup-inner">
       <div class="popup-badge" style="background:${badgeColor}">DAY ${p.day}</div>
@@ -1064,6 +1230,7 @@ PLACES.forEach(p => {
       <div class="popup-time">${p.time}</div>
       <div class="popup-memo">${p.memo}</div>
       ${popupExtra}
+      ${popupNav}
     </div>
   `;
   marker.bindPopup(popupHtml, { closeButton: false, offset: [0, -4], maxWidth: 300 });
@@ -1190,16 +1357,56 @@ function renderTimeline(days) {
     dayPlaces.forEach(p => {
       const isNow = p.id === nowId;
       let extra = '';
+
+      // Hours display
+      if (p.hours) {
+        extra += `<div class="tl-hours">🕐 ${p.hours}</div>`;
+      }
+
+      // Closed day warning
+      if (p.closedDay !== undefined) {
+        const dayNames = ['일','월','화','수','목','금','토'];
+        const tripDate = new Date(2026, 4, 22 + day); // day1=23, day2=24, day3=25
+        if (tripDate.getDay() === p.closedDay) {
+          extra += `<div class="tl-closed-warn">⚠️ 이 날 ${dayNames[p.closedDay]}요일 휴무!</div>`;
+        } else {
+          extra += `<div class="tl-hours" style="color:#999">매주 ${dayNames[p.closedDay]} 휴무</div>`;
+        }
+      }
+      // Also check alts for closedDay
+      if (p.alts) {
+        p.alts.forEach(a => {
+          if (a.closedDay !== undefined) {
+            const tripDate = new Date(2026, 4, 22 + day);
+            if (tripDate.getDay() === a.closedDay) {
+              a._closed = true;
+            }
+          }
+        });
+      }
+
       if (p.tip) {
         extra += `<div class="tl-tip">💡 ${p.tip}</div>`;
       }
-      if (p.alts && p.alts.length) {
-        extra += `<div class="tl-alts-label">🍽️ 추천 맛집 / 대안</div><div class="tl-alts">`;
-        p.alts.forEach(a => {
-          extra += `<a class="tl-alt-chip" href="${a.url}" target="_blank" onclick="event.stopPropagation()">${a.name}</a>`;
+
+      // PlanB (rain alternatives)
+      if (p.planB && p.planB.length) {
+        extra += `<div class="tl-planb-label">🌧️ 비 올 때 플랜B</div><div class="tl-planb">`;
+        p.planB.forEach(b => {
+          extra += `<span class="tl-planb-chip" onclick="event.stopPropagation(); map.setView([${b.lat},${b.lng}],14)" title="${b.desc}">${b.name}</span>`;
         });
         extra += `</div>`;
       }
+
+      if (p.alts && p.alts.length) {
+        extra += `<div class="tl-alts-label">🍽️ 추천 맛집 / 대안</div><div class="tl-alts">`;
+        p.alts.forEach(a => {
+          const closedTag = a._closed ? ' ⚠️휴무' : '';
+          extra += `<a class="tl-alt-chip" href="${a.url}" target="_blank" onclick="event.stopPropagation()" title="${a.desc}"${a._closed ? ' style="opacity:0.5;text-decoration:line-through"' : ''}>${a.name}${closedTag}</a>`;
+        });
+        extra += `</div>`;
+      }
+
       if (p.links && p.links.length) {
         extra += `<div class="tl-links-label">🔗 참고 링크</div><div class="tl-links">`;
         p.links.forEach(l => {
@@ -1207,11 +1414,21 @@ function renderTimeline(days) {
         });
         extra += `</div>`;
       }
-      html += `<div class="tl-card day${day} ${isNow ? 'is-now' : ''}" data-id="${p.id}">
+
+      // Navigation buttons (Naver Map + Kakao Map)
+      const naverWeb = `https://map.naver.com/v5/search/${encodeURIComponent(p.name + ' 제주')}`;
+      const kakaoUrl = `https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`;
+      extra += `<div class="tl-nav-row">
+        <a class="tl-nav-btn tl-nav-naver" href="${naverWeb}" target="_blank" onclick="event.stopPropagation()">🧭 네이버지도</a>
+        <a class="tl-nav-btn tl-nav-kakao" href="${kakaoUrl}" target="_blank" onclick="event.stopPropagation()">🗺️ 카카오맵</a>
+      </div>`;
+
+      const hasPlanbAttr = p.planB && p.planB.length ? 'true' : 'false';
+      html += `<div class="tl-card day${day} ${isNow ? 'is-now' : ''}" data-id="${p.id}" data-indoor="${p.indoor}" data-has-planb="${hasPlanbAttr}">
         <div class="tl-icon">${p.icon}</div>
         <div class="tl-content">
           <div class="tl-time">${p.time}</div>
-          <div class="tl-name">${p.name}</div>
+          <div class="tl-name">${p.name}${p.indoor === false ? ' <span style="font-size:10px;color:#999">실외</span>' : ''}</div>
           <div class="tl-memo">${p.memo}</div>
           ${extra}
         </div>
@@ -1360,6 +1577,13 @@ function toggleChecklist() {
 
 checklistBtn.addEventListener('click', toggleChecklist);
 checklistOverlay.addEventListener('click', toggleChecklist);
+
+// ─── RAIN MODE ───────────────────────────────
+const rainBtn = document.getElementById('rainBtn');
+rainBtn.addEventListener('click', () => {
+  document.body.classList.toggle('rain-mode');
+  rainBtn.classList.toggle('active');
+});
 
 // ─── INIT ─────────────────────────────────────
 window.addEventListener('load', () => {

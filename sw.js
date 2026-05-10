@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jeju-trip-v4';
+const CACHE_NAME = 'jeju-trip-v5';
 const ASSETS = [
   './',
   './index.html',

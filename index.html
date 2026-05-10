@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>제주도 여행 — 5.23~25</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1B7FAD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="제주여행">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%231B7FAD'/%3E%3Ctext x='90' y='115' text-anchor='middle' font-size='90' fill='white'%3E🏝️%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ocean: #1B7FAD;
+  --ocean-light: #E8F4F8;
+  --ocean-deep: #0E5A7E;
+  --barley: #6BAF6B;
+  --barley-light: #E8F5E8;
+  --barley-deep: #4A8A4A;
+  --coral: #E8785A;
+  --coral-light: #FFF0EB;
+  --coral-deep: #C45E3F;
+  --volcanic: #4A4A4A;
+  --volcanic-light: #8A8A8A;
+  --sand: #F7F3EE;
+  --sand-warm: #EDE6DB;
+  --linen: #FAF8F5;
+  --white: #FFFFFF;
+  --shadow-soft: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  color: var(--volcanic);
+  background: var(--linen);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* — Linen texture overlay — */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='60' height='60' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* — Header — */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, var(--white) 0%, var(--sand) 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 12px 20px 0;
+}
+
+.title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--volcanic);
+  letter-spacing: -0.5px;
+}
+
+.title-accent {
+  color: var(--ocean);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--volcanic-light);
+  font-weight: 400;
+}
+
+/* — Day Tabs — */
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  position: relative;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--volcanic-light);
+  background: transparent;
+  border: none;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab:hover { color: var(--volcanic); background: rgba(0,0,0,0.03); }
+
+.tab.active { color: var(--volcanic); background: rgba(0,0,0,0.04); }
+.tab.active::after { width: 70%; }
+
+.tab[data-day="1"].active { color: var(--coral-deep); }
+.tab[data-day="1"].active::after { background: var(--coral); }
+.tab[data-day="2"].active { color: var(--ocean-deep); }
+.tab[data-day="2"].active::after { background: var(--ocean); }
+.tab[data-day="3"].active { color: var(--barley-deep); }
+.tab[data-day="3"].active::after { background: var(--barley); }
+.tab[data-day="all"].active { color: var(--volcanic); }
+.tab[data-day="all"].active::after { background: var(--volcanic); }
+
+.tab .tab-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.tab[data-day="1"] .tab-dot { background: var(--coral); }
+.tab[data-day="2"] .tab-dot { background: var(--ocean); }
+.tab[data-day="3"] .tab-dot { background: var(--barley); }
+
+/* — Main Layout — */
+.main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding-top: 88px;
+}
+
+/* — Map — */
+.map-container {
+  position: relative;
+  flex: 0 0 55%;
+  min-height: 250px;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Custom Leaflet overrides */
+.leaflet-popup-content-wrapper {
+  border-radius: 14px !important;
+  box-shadow: var(--shadow-card) !important;
+  font-family: 'Pretendard', sans-serif !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 200px;
+}
+.leaflet-popup-tip {
+  box-shadow: var(--shadow-soft) !important;
+}
+
+.popup-inner {
+  padding: 14px 16px;
+}
+.popup-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.popup-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.popup-time {
+  font-size: 12px;
+  color: var(--volcanic-light);
+  margin-bottom: 4px;
+}
+.popup-memo {
+  font-size: 12px;
+  color: var(--volcanic-light);
+  line-height: 1.4;
+}
+
+/* Custom numbered markers */
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  border: 2.5px solid white;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: white;
+  transition: transform 0.2s ease;
+}
+.custom-marker span {
+  transform: rotate(45deg);
+}
+.custom-marker.day1 { background: var(--coral); }
+.custom-marker.day2 { background: var(--ocean); }
+.custom-marker.day3 { background: var(--barley); }
+
+.custom-marker.active-marker {
+  transform: rotate(-45deg) scale(1.3);
+  z-index: 9999 !important;
+}
+
+/* Ferry icon marker */
+.ferry-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ocean);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  border: 2px solid white;
+  font-size: 14px;
+}
+
+/* — Timeline Panel — */
+.timeline-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.timeline-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(255,255,255,1), rgba(255,255,255,0));
+  z-index: 10;
+  pointer-events: none;
+}
+
+.timeline-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 100px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timeline-scroll::-webkit-scrollbar { width: 4px; }
+.timeline-scroll::-webkit-scrollbar-track { background: transparent; }
+.timeline-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+/* Day divider */
+.day-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+  padding: 0 4px;
+}
+
+.day-divider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.day-divider-text {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.day-divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+}
+
+.day-divider.day1 .day-divider-dot { background: var(--coral); }
+.day-divider.day1 .day-divider-text { color: var(--coral-deep); }
+.day-divider.day2 .day-divider-dot { background: var(--ocean); }
+.day-divider.day2 .day-divider-text { color: var(--ocean-deep); }
+.day-divider.day3 .day-divider-dot { background: var(--barley); }
+.day-divider.day3 .day-divider-text { color: var(--barley-deep); }
+
+/* Timeline cards */
+.tl-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border: 1.5px solid transparent;
+}
+
+.tl-card:hover {
+  background: var(--sand);
+  border-color: rgba(0,0,0,0.04);
+}
+
+.tl-card.active-card {
+  background: var(--sand);
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-soft);
+}
+
+.tl-card.day1.active-card { border-left: 3px solid var(--coral); }
+.tl-card.day2.active-card { border-left: 3px solid var(--ocean); }
+.tl-card.day3.active-card { border-left: 3px solid var(--barley); }
+
+/* Now indicator */
+.tl-card.is-now::before {
+  content: '지금';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  background: #FF4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  animation: pulse-now 2s ease-in-out infinite;
+}
+
+@keyframes pulse-now {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.tl-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tl-card.day1 .tl-icon { background: var(--coral-light); }
+.tl-card.day2 .tl-icon { background: var(--ocean-light); }
+.tl-card.day3 .tl-icon { background: var(--barley-light); }
+
+.tl-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--volcanic-light);
+  margin-bottom: 2px;
+  letter-spacing: 0.3px;
+}
+
+.tl-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--volcanic);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-memo {
+  font-size: 12px;
+  color: var(--volcanic-light);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tl-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.tl-card.day1 .tl-num { background: var(--coral); }
+.tl-card.day2 .tl-num { background: var(--ocean); }
+.tl-card.day3 .tl-num { background: var(--barley); }
+
+/* — Resize Handle — */
+.resize-handle {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  background: var(--white);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  touch-action: none;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.resize-handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.12);
+}
+
+/* — Ferry info badge — */
+.ferry-info {
+  background: var(--ocean-light);
+  border: 1px solid rgba(27,127,173,0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 4px 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ocean-deep);
+}
+
+.ferry-info strong { font-weight: 600; }
+
+/* — Desktop Layout — */
+@media (min-width: 768px) {
+  .main {
+    flex-direction: row;
+    padding-top: 88px;
+  }
+
+  .map-container {
+    flex: 0 0 58%;
+    height: auto;
+  }
+
+  .resize-handle { display: none; }
+
+  .timeline-panel {
+    flex: 1;
+    border-top: none;
+    border-left: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .timeline-scroll {
+    padding: 20px 20px 100px;
+  }
+
+  .tl-card {
+    padding: 14px 16px;
+    margin-bottom: 4px;
+  }
+
+  .header-inner {
+    padding: 14px 28px 0;
+  }
+
+  .title { font-size: 24px; }
+}
+
+@media (min-width: 1200px) {
+  .map-container { flex: 0 0 62%; }
+}
+
+/* — Loading animation — */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--linen);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-text {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--volcanic);
+  margin-bottom: 8px;
+}
+
+.loading-sub {
+  font-size: 13px;
+  color: var(--volcanic-light);
+}
+
+.loading-dots span {
+  display: inline-block;
+  animation: dot-bounce 1.4s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+/* — Checklist panel — */
+.checklist-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--volcanic);
+  color: white;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  z-index: 1001;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checklist-toggle:hover { transform: scale(1.1); }
+
+.checklist-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
+  z-index: 1002;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 20px 24px 40px;
+}
+
+.checklist-drawer.open { transform: translateY(0); }
+
+.checklist-drawer h3 {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ocean);
+  cursor: pointer;
+}
+
+.check-item.checked label {
+  text-decoration: line-through;
+  color: var(--volcanic-light);
+}
+
+.checklist-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 1001;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.checklist-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Hide Leaflet attribution on mobile for cleaner look */
+@media (max-width: 500px) {
+  .leaflet-control-attribution { font-size: 8px !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loader">
+  <div class="loading-text">제주도 여행</div>
+  <div class="loading-sub">
+    <span class="loading-dots"><span>지</span><span>도</span><span> 준비 중</span></span>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="title-row">
+      <h1 class="title">제주<span class="title-accent">도</span> 여행</h1>
+      <span class="subtitle">5. 23 토 — 25 월 · 2박 3일</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-day="all">전체</button>
+      <button class="tab" data-day="1"><span class="tab-dot"></span>Day 1</button>
+      <button class="tab" data-day="2"><span class="tab-dot"></span>Day 2</button>
+      <button class="tab" data-day="3"><span class="tab-dot"></span>Day 3</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+  <div class="resize-handle" id="resizeHandle">
+    <div class="resize-handle-bar"></div>
+  </div>
+  <section class="timeline-panel">
+    <div class="timeline-scroll" id="timeline"></div>
+  </section>
+</main>
+
+<!-- Checklist button + drawer -->
+<button class="checklist-toggle" id="checklistBtn" title="준비물 체크리스트">✓</button>
+<div class="checklist-overlay" id="checklistOverlay"></div>
+<div class="checklist-drawer" id="checklistDrawer">
+  <h3>🧳 준비물 체크리스트</h3>
+  <div id="checklistItems"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─── DATA ─────────────────────────────────────
+const PLACES = [
+  // Day 1
+  { id: 'd1-1', day: 1, num: 1, name: '제주공항', time: '08:45', icon: '✈️', cat: 'airport',
+    lat: 33.5104, lng: 126.4914, memo: '07:35 김포 출발 → 08:45 도착' },
+  { id: 'd1-2', day: 1, num: 2, name: '렌터카 픽업', time: '09:30', icon: '🚗', cat: 'car',
+    lat: 33.5090, lng: 126.4930, memo: '렌트카하우스 5구역 10번' },
+  { id: 'd1-3', day: 1, num: 3, name: '사려니숲길', time: '10:00~11:30', icon: '🌿', cat: 'nature',
+    lat: 33.4279, lng: 126.7088, memo: '비자림로 입구, 편백·삼나무 숲길 1.5시간' },
+  { id: 'd1-4', day: 1, num: 4, name: '세화리 점심', time: '12:00~13:00', icon: '🍽️', cat: 'food',
+    lat: 33.4627, lng: 126.8597, memo: '해산물 or 보말칼국수' },
+  { id: 'd1-5', day: 1, num: 5, name: '카페 마티에르', time: '13:30~15:00', icon: '☕', cat: 'cafe',
+    lat: 33.4627, lng: 126.8590, memo: '세화 해변 감성 카페, 바다뷰' },
+  { id: 'd1-6', day: 1, num: 6, name: 'Seogwipo KAL Hotel', time: '15:00', icon: '🏨', cat: 'hotel',
+    lat: 33.2468, lng: 126.5616, memo: '체크인 15:00' },
+  { id: 'd1-7', day: 1, num: 7, name: '매일올레시장', time: '16:30~17:30', icon: '🛍️', cat: 'shop',
+    lat: 33.2481, lng: 126.5658, memo: '흑돼지 만두, 한라봉 주스, 간식거리' },
+  { id: 'd1-8', day: 1, num: 8, name: '천지연폭포', time: '18:00~19:00', icon: '🌿', cat: 'nature',
+    lat: 33.2459, lng: 126.5544, memo: '호텔에서 도보 10분, 저녁 산책' },
+  { id: 'd1-9', day: 1, num: 9, name: '서귀포 갈치조림', time: '19:30~21:00', icon: '🍽️', cat: 'food',
+    lat: 33.2475, lng: 126.5630, memo: '자리물회 or 갈치조림' },
+
+  // Day 2
+  { id: 'd2-1', day: 2, num: 1, name: 'KAL Hotel 조식', time: '08:00~09:00', icon: '🏨', cat: 'hotel',
+    lat: 33.2468, lng: 126.5616, memo: '호텔 조식 뷔페, 서두르지 않기' },
+  { id: 'd2-2', day: 2, num: 2, name: '운진항', time: '10:00', icon: '⛴️', cat: 'ferry',
+    lat: 33.2137, lng: 126.2517, memo: '승선권 교환, 신분증 필수' },
+  { id: 'd2-3', day: 2, num: 3, name: '가파도', time: '10:15~14:00', icon: '🏝️', cat: 'island',
+    lat: 33.1700, lng: 126.2717, memo: '도보 산책 — 청보리밭, 돌담길, 섬 카페' },
+  { id: 'd2-4', day: 2, num: 4, name: '운진항 귀환', time: '14:20', icon: '⛴️', cat: 'ferry',
+    lat: 33.2137, lng: 126.2517, memo: '14:20 배편 귀환' },
+  { id: 'd2-5', day: 2, num: 5, name: '제주신화월드', time: '15:30', icon: '🏨', cat: 'hotel',
+    lat: 33.3050, lng: 126.3100, memo: '랜딩관 체크인, 스파·온수풀' },
+  { id: 'd2-6', day: 2, num: 6, name: '리조트 스파', time: '16:00~18:00', icon: '♨️', cat: 'spa',
+    lat: 33.3055, lng: 126.3105, memo: '가파도 산책 후 피로 회복' },
+  { id: 'd2-7', day: 2, num: 7, name: '대기정 / 마루나키친', time: '18:30~20:00', icon: '🍽️', cat: 'food',
+    lat: 33.2470, lng: 126.4120, memo: '갈치조림 or 오션뷰 파스타, 차 10분' },
+
+  // Day 3
+  { id: 'd3-1', day: 3, num: 1, name: '신화월드 조식', time: '08:00~09:30', icon: '🏨', cat: 'hotel',
+    lat: 33.3050, lng: 126.3100, memo: '여유롭게 마지막 아침' },
+  { id: 'd3-2', day: 3, num: 2, name: '오설록 티뮤지엄', time: '10:30~12:00', icon: '🍵', cat: 'cafe',
+    lat: 33.3060, lng: 126.2893, memo: '녹차밭 산책 + 녹차 디저트' },
+  { id: 'd3-3', day: 3, num: 3, name: '우무 (한림)', time: '12:30~13:30', icon: '☕', cat: 'cafe',
+    lat: 33.4100, lng: 126.2650, memo: '제주 대표 디저트 카페, 브런치 겸' },
+  { id: 'd3-4', day: 3, num: 4, name: '애월더선셋', time: '14:00~15:30', icon: '☕', cat: 'cafe',
+    lat: 33.4630, lng: 126.3260, memo: '오션뷰 카페, 수제 디저트' },
+  { id: 'd3-5', day: 3, num: 5, name: '렌터카 반납', time: '17:00', icon: '🚗', cat: 'car',
+    lat: 33.5090, lng: 126.4930, memo: '17:00까지 반납' },
+  { id: 'd3-6', day: 3, num: 6, name: '제주공항', time: '18:55', icon: '✈️', cat: 'airport',
+    lat: 33.5104, lng: 126.4914, memo: '7C186 제주→김포 18:55 출발' },
+];
+
+const CHECKLIST = [
+  '실물 면허증 (렌터카 필수)',
+  '신분증 (가파도 승선 시 필수)',
+  '가파도 배편 사전 예매',
+  '자외선 차단제 / 모자',
+  '가벼운 겉옷 (해안가 바람)',
+  '편한 운동화 (사려니숲길 + 가파도)',
+  '수영복 (신화월드 스파/수영장)',
+];
+
+const DAY_COLORS = {
+  1: { main: '#E8785A', light: '#FFF0EB', deep: '#C45E3F' },
+  2: { main: '#1B7FAD', light: '#E8F4F8', deep: '#0E5A7E' },
+  3: { main: '#6BAF6B', light: '#E8F5E8', deep: '#4A8A4A' },
+};
+
+const DAY_LABELS = {
+  1: '5/23 토 · 숲길 힐링 + 세화 감성',
+  2: '5/24 일 · 가파도 청보리 + 신화월드 스파',
+  3: '5/25 월 · 오설록 + 애월 카페 + 귀경',
+};
+
+// ─── MAP SETUP ────────────────────────────────
+const map = L.map('map', {
+  center: [33.36, 126.55],
+  zoom: 10,
+  zoomControl: false,
+  attributionControl: true,
+});
+
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/">OSM</a>',
+  maxZoom: 18,
+}).addTo(map);
+
+// ─── MARKERS & POLYLINES ─────────────────────
+const markers = {};
+const polylines = {};
+const dayGroups = { 1: [], 2: [], 3: [] };
+
+function createMarkerIcon(day, num) {
+  const color = DAY_COLORS[day].main;
+  return L.divIcon({
+    className: '',
+    html: `<div class="custom-marker day${day}"><span>${num}</span></div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -34],
+  });
+}
+
+// Create markers
+PLACES.forEach(p => {
+  const marker = L.marker([p.lat, p.lng], { icon: createMarkerIcon(p.day, p.num) });
+
+  const badgeColor = DAY_COLORS[p.day].main;
+  const popupHtml = `
+    <div class="popup-inner">
+      <div class="popup-badge" style="background:${badgeColor}">DAY ${p.day}</div>
+      <div class="popup-name">${p.icon} ${p.name}</div>
+      <div class="popup-time">${p.time}</div>
+      <div class="popup-memo">${p.memo}</div>
+    </div>
+  `;
+  marker.bindPopup(popupHtml, { closeButton: false, offset: [0, -4] });
+
+  markers[p.id] = marker;
+  dayGroups[p.day].push(marker);
+});
+
+// Create polylines per day
+function buildPolylines() {
+  [1, 2, 3].forEach(day => {
+    const pts = PLACES.filter(p => p.day === day);
+    const coords = pts.map(p => [p.lat, p.lng]);
+    const color = DAY_COLORS[day].main;
+
+    // Check for ferry segments (day 2 has ferry to Gapado)
+    const segments = [];
+    let currentSeg = { coords: [], dash: false };
+
+    for (let i = 0; i < pts.length; i++) {
+      const isFerry = pts[i].cat === 'ferry' || pts[i].cat === 'island';
+      const nextIsFerry = pts[i + 1] && (pts[i + 1].cat === 'ferry' || pts[i + 1].cat === 'island');
+
+      currentSeg.coords.push([pts[i].lat, pts[i].lng]);
+
+      if (i < pts.length - 1) {
+        const segIsFerry = isFerry || nextIsFerry;
+        if (segIsFerry !== currentSeg.dash && currentSeg.coords.length > 0) {
+          segments.push({ ...currentSeg });
+          currentSeg = { coords: [[pts[i].lat, pts[i].lng]], dash: segIsFerry };
+        } else {
+          currentSeg.dash = segIsFerry;
+        }
+      }
+    }
+    if (currentSeg.coords.length > 0) segments.push(currentSeg);
+
+    const lines = segments.map(seg =>
+      L.polyline(seg.coords, {
+        color: color,
+        weight: 3,
+        opacity: seg.dash ? 0.5 : 0.7,
+        dashArray: seg.dash ? '8, 8' : null,
+        lineJoin: 'round',
+        lineCap: 'round',
+      })
+    );
+
+    polylines[day] = lines;
+  });
+}
+
+buildPolylines();
+
+// ─── DAY FILTERING ────────────────────────────
+let activeDay = 'all';
+const allLayers = L.layerGroup();
+
+function showDay(day) {
+  activeDay = day;
+
+  // Clear map
+  map.eachLayer(l => {
+    if (l instanceof L.Marker || l instanceof L.Polyline) map.removeLayer(l);
+  });
+
+  const daysToShow = day === 'all' ? [1, 2, 3] : [parseInt(day)];
+
+  daysToShow.forEach(d => {
+    dayGroups[d].forEach(m => m.addTo(map));
+    polylines[d].forEach(l => l.addTo(map));
+  });
+
+  // Fit bounds
+  const visiblePlaces = PLACES.filter(p => daysToShow.includes(p.day));
+  if (visiblePlaces.length > 0) {
+    const bounds = L.latLngBounds(visiblePlaces.map(p => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+  }
+
+  // Update timeline
+  renderTimeline(daysToShow);
+
+  // Update tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.day === day);
+  });
+}
+
+// ─── TIMELINE RENDERING ──────────────────────
+function getNowId() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate(), h = now.getHours(), min = now.getMinutes();
+
+  if (y !== 2026 || m !== 5 || d < 23 || d > 25) return null;
+
+  const day = d - 22; // 23→1, 24→2, 25→3
+  const dayPlaces = PLACES.filter(p => p.day === day);
+
+  let closest = null;
+  for (let i = 0; i < dayPlaces.length; i++) {
+    const t = dayPlaces[i].time.split('~')[0].split(':');
+    const ph = parseInt(t[0]), pm = parseInt(t[1] || 0);
+    if (h > ph || (h === ph && min >= pm)) {
+      closest = dayPlaces[i].id;
+    }
+  }
+  return closest;
+}
+
+function renderTimeline(days) {
+  const container = document.getElementById('timeline');
+  const nowId = getNowId();
+  let html = '';
+
+  days.forEach(day => {
+    html += `<div class="day-divider day${day}">
+      <div class="day-divider-dot"></div>
+      <div class="day-divider-text">${DAY_LABELS[day]}</div>
+      <div class="day-divider-line"></div>
+    </div>`;
+
+    const dayPlaces = PLACES.filter(p => p.day === day);
+    dayPlaces.forEach(p => {
+      const isNow = p.id === nowId;
+      html += `<div class="tl-card day${day} ${isNow ? 'is-now' : ''}" data-id="${p.id}">
+        <div class="tl-icon">${p.icon}</div>
+        <div class="tl-content">
+          <div class="tl-time">${p.time}</div>
+          <div class="tl-name">${p.name}</div>
+          <div class="tl-memo">${p.memo}</div>
+        </div>
+        <div class="tl-num">${p.num}</div>
+      </div>`;
+    });
+
+    // Ferry info for Day 2
+    if (day === 2) {
+      html += `<div class="ferry-info">
+        <strong>⛴️ 가파도 배편</strong><br>
+        운진항→가파도: 09:00 / <strong>10:00</strong> / 11:00 / 12:00 / 14:00 / 15:00 / 15:50<br>
+        가파도→운진항: 11:20 / 12:20 / <strong>14:20</strong> / 14:50 / 15:20 / 15:50 / 16:10<br>
+        왕복 ~10,000원 · 5월 청보리축제 증편 가능 · 결항 시 전날 확인
+      </div>`;
+    }
+  });
+
+  container.innerHTML = html;
+
+  // Attach click handlers
+  container.querySelectorAll('.tl-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
+      focusPlace(id);
+    });
+  });
+
+  // Scroll to now
+  if (nowId) {
+    setTimeout(() => {
+      const nowCard = container.querySelector('.is-now');
+      if (nowCard) nowCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+  }
+}
+
+// ─── FOCUS PLACE ──────────────────────────────
+let activeCardId = null;
+
+function focusPlace(id) {
+  const place = PLACES.find(p => p.id === id);
+  if (!place) return;
+
+  // Pan map
+  map.setView([place.lat, place.lng], 14, { animate: true, duration: 0.5 });
+
+  // Open popup
+  if (markers[id]) markers[id].openPopup();
+
+  // Highlight marker
+  document.querySelectorAll('.custom-marker').forEach(m => m.classList.remove('active-marker'));
+  const markerEl = markers[id]?.getElement();
+  if (markerEl) {
+    const inner = markerEl.querySelector('.custom-marker');
+    if (inner) inner.classList.add('active-marker');
+  }
+
+  // Highlight card
+  document.querySelectorAll('.tl-card').forEach(c => c.classList.remove('active-card'));
+  const card = document.querySelector(`.tl-card[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('active-card');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  activeCardId = id;
+}
+
+// ─── TABS ─────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  showDay(tab.dataset.day);
+});
+
+// ─── RESIZE HANDLE (mobile) ──────────────────
+const resizeHandle = document.getElementById('resizeHandle');
+const mapContainer = document.querySelector('.map-container');
+let isResizing = false;
+let startY, startHeight;
+
+function onResizeStart(e) {
+  if (window.innerWidth >= 768) return;
+  isResizing = true;
+  startY = e.touches ? e.touches[0].clientY : e.clientY;
+  startHeight = mapContainer.offsetHeight;
+  document.body.style.userSelect = 'none';
+}
+
+function onResizeMove(e) {
+  if (!isResizing) return;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  const diff = y - startY;
+  const newHeight = Math.max(150, Math.min(window.innerHeight * 0.8, startHeight + diff));
+  mapContainer.style.flex = `0 0 ${newHeight}px`;
+  map.invalidateSize();
+}
+
+function onResizeEnd() {
+  isResizing = false;
+  document.body.style.userSelect = '';
+}
+
+resizeHandle.addEventListener('mousedown', onResizeStart);
+resizeHandle.addEventListener('touchstart', onResizeStart, { passive: true });
+document.addEventListener('mousemove', onResizeMove);
+document.addEventListener('touchmove', onResizeMove, { passive: true });
+document.addEventListener('mouseup', onResizeEnd);
+document.addEventListener('touchend', onResizeEnd);
+
+// ─── CHECKLIST ────────────────────────────────
+const checklistBtn = document.getElementById('checklistBtn');
+const checklistDrawer = document.getElementById('checklistDrawer');
+const checklistOverlay = document.getElementById('checklistOverlay');
+const checklistItems = document.getElementById('checklistItems');
+
+// Load state from localStorage
+const savedChecks = JSON.parse(localStorage.getItem('jeju-checklist') || '{}');
+
+let checkHtml = '';
+CHECKLIST.forEach((item, i) => {
+  const checked = savedChecks[i] || false;
+  checkHtml += `<div class="check-item ${checked ? 'checked' : ''}">
+    <input type="checkbox" id="chk${i}" ${checked ? 'checked' : ''}>
+    <label for="chk${i}">${item}</label>
+  </div>`;
+});
+checklistItems.innerHTML = checkHtml;
+
+checklistItems.addEventListener('change', e => {
+  if (e.target.type === 'checkbox') {
+    const idx = parseInt(e.target.id.replace('chk', ''));
+    const item = e.target.closest('.check-item');
+    item.classList.toggle('checked', e.target.checked);
+    savedChecks[idx] = e.target.checked;
+    localStorage.setItem('jeju-checklist', JSON.stringify(savedChecks));
+  }
+});
+
+function toggleChecklist() {
+  const isOpen = checklistDrawer.classList.contains('open');
+  checklistDrawer.classList.toggle('open');
+  checklistOverlay.classList.toggle('open');
+}
+
+checklistBtn.addEventListener('click', toggleChecklist);
+checklistOverlay.addEventListener('click', toggleChecklist);
+
+// ─── INIT ─────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    showDay('all');
+    map.invalidateSize();
+  }, 600);
+});
+
+// Handle resize
+window.addEventListener('resize', () => {
+  map.invalidateSize();
+});
+
+// ─── PWA: Service Worker Registration ────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => console.log('SW registered:', reg.scope))
+    .catch(err => console.log('SW registration failed:', err));
+}
+</script>
+</body>
+</html>

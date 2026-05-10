@@ -500,42 +500,58 @@ body::before {
   display: inline-block;
   line-height: 1.3;
 }
+.tl-alts-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--volcanic-light);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
 .tl-alts {
-  margin-top: 6px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 .tl-alt-chip {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: var(--sand-warm);
-  color: var(--volcanic);
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--coral-light);
+  color: var(--coral-deep);
   text-decoration: none;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 600;
+  border: 1px solid rgba(232,120,90,0.3);
+  transition: all 0.2s;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
-.tl-alt-chip:hover { background: var(--coral-light); color: var(--coral-deep); }
+.tl-alt-chip:hover, .tl-alt-chip:active { background: var(--coral); color: white; }
+.tl-links-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--volcanic-light);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
 .tl-links {
-  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
 }
 .tl-link {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 5px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
   background: var(--ocean-light);
   color: var(--ocean-deep);
   text-decoration: none;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 600;
+  border: 1px solid rgba(27,127,173,0.25);
+  transition: all 0.2s;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
-.tl-link:hover { background: var(--ocean); color: white; }
+.tl-link:hover, .tl-link:active { background: var(--ocean); color: white; }
 
 .tl-num {
   width: 22px;
@@ -1178,16 +1194,16 @@ function renderTimeline(days) {
         extra += `<div class="tl-tip">💡 ${p.tip}</div>`;
       }
       if (p.alts && p.alts.length) {
-        extra += `<div class="tl-alts">`;
+        extra += `<div class="tl-alts-label">🍽️ 추천 맛집 / 대안</div><div class="tl-alts">`;
         p.alts.forEach(a => {
           extra += `<a class="tl-alt-chip" href="${a.url}" target="_blank" onclick="event.stopPropagation()">${a.name}</a>`;
         });
         extra += `</div>`;
       }
       if (p.links && p.links.length) {
-        extra += `<div class="tl-links">`;
+        extra += `<div class="tl-links-label">🔗 참고 링크</div><div class="tl-links">`;
         p.links.forEach(l => {
-          extra += `<a class="tl-link" href="${l.url}" target="_blank" onclick="event.stopPropagation()">🔗 ${l.label}</a>`;
+          extra += `<a class="tl-link" href="${l.url}" target="_blank" onclick="event.stopPropagation()">${l.label}</a>`;
         });
         extra += `</div>`;
       }
